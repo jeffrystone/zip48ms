@@ -8,16 +8,16 @@ import {
 } from "react";
 
 interface WalletState {
-  address?: string;
-  setAddress: (address?: string) => void;
+  addresses: string[];
+  setAddresses: (addresses: string[]) => void;
 }
 
 const WalletContext = createContext<WalletState | undefined>(undefined);
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
-  const [address, setAddress] = useState<string>();
+  const [addresses, setAddresses] = useState<string[]>([]);
 
-  const value = useMemo(() => ({ address, setAddress }), [address]);
+  const value = useMemo(() => ({ addresses, setAddresses }), [addresses]);
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 };

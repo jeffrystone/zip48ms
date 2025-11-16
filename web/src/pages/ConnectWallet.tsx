@@ -1,66 +1,59 @@
 import { useState } from "react";
 import { useWallet } from "../state/WalletContext";
-
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
-    };
-  }
-}
+import { useZcashSnap } from "../hooks/useZcashSnap";
 
 const ConnectWallet = () => {
-  const { address, setAddress } = useWallet();
+  const { addresses, setAddresses } = useWallet();
+  const { connectSnap } = useZcashSnap();
   const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string>();
 
-  const connectMetamask = async () => {
+  const handleConnect = async () => {
     setConnecting(true);
+    setError(undefined);
     try {
-      if (window.ethereum?.request) {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        if (Array.isArray(accounts) && accounts[0]) {
-          setAddress(String(accounts[0]));
-          return;
-        }
-      }
-      setAddress("0x" + crypto.randomUUID().replace(/-/g, "").slice(0, 40));
-    } catch (error) {
-      console.warn("Metamask connection failed", error);
-      setAddress("0x" + crypto.randomUUID().replace(/-/g, "").slice(0, 40));
+      const list = await connectSnap();
+      setAddresses(list);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
     } finally {
       setConnecting(false);
     }
   };
 
-  const connectLedger = () => {
-    const pseudo = `ledger-${Date.now().toString(16)}`;
-    setAddress(pseudo);
+  const disconnect = () => {
+    setAddresses([]);
+    setError(undefined);
   };
-
-  const disconnect = () => setAddress(undefined);
 
   return (
     <section className="panel">
       <h2>Connect Wallet</h2>
-      <p>Select an available option to connect to the Zcash testnet.</p>
+      <p>Install and connect the ChainSafe Zcash Snap through MetaMask.</p>
 
       <div className="button-row">
-        <button onClick={connectMetamask} disabled={connecting}>
-          {connecting ? "Connecting..." : "Metamask"}
+        <button onClick={handleConnect} disabled={connecting}>
+          {connecting ? "Connecting..." : "Connect Zcash Snap"}
         </button>
-        <button className="secondary" onClick={connectLedger}>
-          Ledger
-        </button>
-        {address && (
+        {addresses.length > 0 && (
           <button className="secondary" onClick={disconnect}>
             Disconnect
           </button>
         )}
       </div>
 
+      {error && (
+        <div className="address-box" style={{ marginTop: "1rem", color: "#dc2626" }}>
+          {error}
+        </div>
+      )}
+
       <div className="field" style={{ marginTop: "1.5rem" }}>
-        <label>Current address</label>
-        <div className="address-box">{address ?? "Not connected"}</div>
+        <label>Connected addresses</label>
+        <div className="address-box">
+          {addresses.length > 0 ? addresses.join("\n") : "Not connected"}
+        </div>
       </div>
     </section>
   );

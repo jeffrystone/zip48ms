@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWallet } from "../state/WalletContext";
 import { generateP2shMultisigAddress } from "../lib/p2sh";
 
@@ -9,14 +9,18 @@ const placeholderKeys = [
 ];
 
 const CreateMultisig = () => {
-  const { address } = useWallet();
-  const initialKeys = useMemo(() => {
-    const base = address ? [address, ...placeholderKeys] : placeholderKeys;
+  const { addresses } = useWallet();
+  const defaultKeys = useMemo(() => {
+    const base = addresses.length > 0 ? [addresses[0], ...placeholderKeys] : placeholderKeys;
     return base.join("\n");
-  }, [address]);
+  }, [addresses]);
 
-  const [keysInput, setKeysInput] = useState(initialKeys);
+  const [keysInput, setKeysInput] = useState(defaultKeys);
   const [threshold, setThreshold] = useState(2);
+
+  useEffect(() => {
+    setKeysInput(defaultKeys);
+  }, [defaultKeys]);
 
   const participants = keysInput
     .split("\n")
